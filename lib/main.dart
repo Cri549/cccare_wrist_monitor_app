@@ -43,10 +43,12 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
       appBar: AppBar(
         backgroundColor: Colors.deepPurple,
         title: Text(widget.title),
       ),
+
       body: Center(
 
         child: Column(
@@ -60,10 +62,15 @@ class _MyHomePageState extends State<MyHomePage> {
           ],
         ),
       ),
+
       floatingActionButton: FloatingActionButton(
         onPressed: _incrementCounter,
         tooltip: 'Increment',
         child: const Icon(Icons.add),
+      ),
+
+      drawer: Drawer(
+        child: Text('Yo!')
       ),
     );
   }
