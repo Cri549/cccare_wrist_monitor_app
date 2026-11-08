@@ -11,12 +11,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'CCCARE App',
       theme: ThemeData(
 
         colorScheme: .fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'CCCARE Home'),
     );
   }
 }
@@ -32,11 +32,13 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  int _dailyStreak = 1;
+  String _streakDisplay = "";
 
-  void _incrementCounter() {
+  void _incrementStreak(){
     setState(() {
-      _counter++;
+      _dailyStreak++;
+      _streakDisplay = _dailyStreak.toString();
     });
   }
 
@@ -46,31 +48,100 @@ class _MyHomePageState extends State<MyHomePage> {
 
       appBar: AppBar(
         backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
         title: Text(widget.title),
+
+        actions: [
+          Icon(Icons.local_fire_department_outlined),
+          SizedBox(width: 4),
+          Text(_streakDisplay, style: TextStyle(fontSize: 20)),
+          SizedBox(width: 16),
+        ],
+
+        elevation: 10.0,
+        shadowColor: Colors.black.withAlpha(255),
       ),
 
-      body: Center(
+      drawer: const MenuDrawer(),
+
+
+    );
+  }
+
+}
+
+class MenuDrawer extends StatelessWidget {
+  const MenuDrawer({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      child: SafeArea(
 
         child: Column(
-          mainAxisAlignment: .center,
+
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: CircleAvatar(
+                radius: 40,
+                child: Icon(Icons.person_outline, size: 48),
+              ),
             ),
+            ListTile(title: const Text('Account'), onTap: () {}),
+            ListTile(title: const Text('Settings'), onTap: () {}),
+            ListTile(title: const Text('Help'), onTap: () {}),
           ],
+
+        ),
+
+      ),
+
+    );
+
+  }
+}
+
+
+class HomePageButton extends StatelessWidget {
+  const HomePageButton({
+    super.key,
+    this.icon,
+    this.label,
+    this.iconSize = 36,
+    this.fontSize = 16,
+    required this.onPressed,
+  });
+
+  final IconData? icon;
+  final String? label;
+  final double iconSize;
+  final double fontSize;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        elevation: 4,
+        padding: const EdgeInsets.all(8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
         ),
       ),
-
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
-
-      drawer: Drawer(
-        child: Text('Yo!')
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: iconSize),
+          const SizedBox(height: 8),
+          Text(
+            label!,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: fontSize),
+          ),
+        ],
       ),
     );
   }
