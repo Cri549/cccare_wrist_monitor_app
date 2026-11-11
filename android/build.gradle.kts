@@ -11,6 +11,14 @@ val newBuildDir: Directory =
         .get()
 rootProject.layout.buildDirectory.value(newBuildDir)
 
+// Some plugins (e.g. flutter_bluetooth_classic_serial) still target SDK 33,
+// but their dependencies need 34+. Force library plugins to compile against 36.
+subprojects {
+    afterEvaluate {
+        extensions.findByType(com.android.build.gradle.LibraryExtension::class.java)?.compileSdk = 36
+    }
+}
+
 subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
