@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'patient_main_menu.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const CCCAREApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class CCCAREApp extends StatelessWidget {
+  const CCCAREApp({super.key});
 
   // This widget is the root of your application.
   @override
@@ -17,22 +17,22 @@ class MyApp extends StatelessWidget {
 
         colorScheme: .fromSeed(seedColor: Colors.cyan),
       ),
-      home: const MyHomePage(title: 'CCCARE Home'),
+      home: const UserChoicePage(title: 'CCCARE Home'),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class UserChoicePage extends StatefulWidget {
+  const UserChoicePage({super.key, required this.title});
 
 
   final String title;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<UserChoicePage> createState() => _UserChoicePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _UserChoicePageState extends State<UserChoicePage> {
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +72,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: SelectionButton(
                   label: 'I am a patient',
                   onPressed: () {
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => const PatientHomePage()),
                     );

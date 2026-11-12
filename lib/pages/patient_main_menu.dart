@@ -1,34 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class PatientHomePage extends StatelessWidget {
+import 'patient_activity_log.dart';
+import 'patient_prescription_viewer.dart';
+import 'patient_settings.dart';
+import 'patient_start_activity.dart';
+import 'patient_messaging.dart';
+import 'patient_reminders.dart';
+
+class PatientHomePage extends StatefulWidget {
   const PatientHomePage({super.key});
 
-  // This widget is the root of your application.
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'CCCARE App',
-      theme: ThemeData(
-
-        colorScheme: .fromSeed(seedColor: Colors.cyan),
-      ),
-      home: const HomePage(title: 'CCCARE Home'),
-    );
-  }
+  State<PatientHomePage> createState() => _PatientHomePage();
 }
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key, required this.title});
-
-
-  final String title;
-
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
+class _PatientHomePage extends State<PatientHomePage> {
   int _dailyStreak = 0;
   String _streakDisplay = "";
 
@@ -46,7 +33,7 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         backgroundColor: Colors.cyan,
         foregroundColor: Colors.white,
-        title: Text(widget.title),
+        title: Text('CCCARE Home'),
 
         actions: [
           Text(_streakDisplay, style: TextStyle(fontSize: 20)),
@@ -85,27 +72,49 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(height: 16),
 
-              // Row 1: Prescription + Exercise Logs
+              // Row 1:
               Expanded(
                 flex: 2,
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+
+                    //Prescription Button
                     Expanded(
                       child: HomePageButton(
                         icon: Icons.description_outlined,
                         label: 'Prescription',
-                        onPressed: () {},
+                        onPressed: () {
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const PatientPresriptionViewer()),
+                          );
+
+                        },
+
                       ),
                     ),
                     const SizedBox(width: 16),
+
+                    //Exercise Logs Button
                     Expanded(
                       child: HomePageButton(
                         icon: Icons.calendar_month_outlined,
                         label: 'Exercise Logs',
-                        onPressed: () {},
+                        onPressed: () {
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const PatientActivityLog()),
+                          );
+
+                        },
+
                       ),
                     ),
+
+
                   ],
                 ),
               ),
@@ -118,24 +127,46 @@ class _HomePageState extends State<HomePage> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+
+                    //Reminder Button
                     Expanded(
                       child: HomePageButton(
                         icon: Icons.doorbell_rounded,
                         label: 'Reminders',
-                        onPressed: () {},
+                        onPressed: () {
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const PatientReminders()),
+                          );
+
+                        },
                       ),
                     ),
                     const SizedBox(width: 16),
+
+                    //Contact CCCARE Button
                     Expanded(
                       child: HomePageButton(
                         icon: Icons.person_outline,
                         label: 'Contact CCCARE',
-                        onPressed: () {},
+                        onPressed: () {
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const PatientMessaging()),
+                          );
+
+                        },
                       ),
                     ),
+
+
                   ],
                 ),
               ),
+
+
             ],
           ),
 
@@ -168,7 +199,21 @@ class MenuDrawer extends StatelessWidget {
               ),
             ),
             ListTile(title: const Text('Account'), onTap: () {}),
-            ListTile(title: const Text('Settings'), onTap: () {})
+            ListTile(title: const Text('Settings'), onTap: () {
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PatientSettings()),
+                );
+
+              }
+            ),
+
+            ListTile(title: const Text('Log Out'), onTap: () {
+              Navigator.popUntil(context, (route) => route.isFirst);
+              }
+            ),
+
           ],
 
         ),
