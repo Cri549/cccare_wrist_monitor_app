@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
       title: 'CCCARE App',
       theme: ThemeData(
 
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: .fromSeed(seedColor: Colors.cyan),
       ),
       home: const MyHomePage(title: 'CCCARE Home'),
     );
@@ -39,7 +39,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
 
       appBar: AppBar(
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: Colors.cyan,
         foregroundColor: Colors.white,
         title: Text(widget.title),
 
@@ -122,7 +122,7 @@ class SelectionButton extends StatelessWidget {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: Colors.cyan,
         foregroundColor: Colors.white,
 
         elevation: 4,

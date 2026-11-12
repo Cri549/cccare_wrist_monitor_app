@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PatientHomePage extends StatelessWidget {
   const PatientHomePage({super.key});
@@ -10,7 +11,7 @@ class PatientHomePage extends StatelessWidget {
       title: 'CCCARE App',
       theme: ThemeData(
 
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: .fromSeed(seedColor: Colors.cyan),
       ),
       home: const HomePage(title: 'CCCARE Home'),
     );
@@ -28,7 +29,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _dailyStreak = 1;
+  int dailyStreak = 0;
+  int _dailyStreak = 0;
   String _streakDisplay = "";
 
   void _incrementStreak(){
@@ -43,15 +45,15 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
 
       appBar: AppBar(
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: Colors.cyan,
         foregroundColor: Colors.white,
         title: Text(widget.title),
 
         actions: [
-          Icon(Icons.local_fire_department_outlined),
-          SizedBox(width: 4),
           Text(_streakDisplay, style: TextStyle(fontSize: 20)),
-          SizedBox(width: 16),
+          SizedBox(width: 8),
+          Icon(Icons.local_fire_department_outlined),
+          SizedBox(width: 12),
         ],
 
         elevation: 10.0,
@@ -78,7 +80,6 @@ class _HomePageState extends State<HomePage> {
                   iconSize: 64,
                   fontSize: 24,
                   onPressed: () {
-                    // TODO: navigate to the daily routine screen
                     _incrementStreak();
                   },
                 ),
@@ -120,7 +121,8 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     Expanded(
                       child: HomePageButton(
-                        // Empty for now, like the sketch. Add icon/label later.
+                        icon: Icons.doorbell_rounded,
+                        label: 'Reminders',
                         onPressed: () {},
                       ),
                     ),
