@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'patient_main_menu.dart';
 
 void main() {
   runApp(const MyApp());
@@ -32,15 +33,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _dailyStreak = 1;
-  String _streakDisplay = "";
-
-  void _incrementStreak(){
-    setState(() {
-      _dailyStreak++;
-      _streakDisplay = _dailyStreak.toString();
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,70 +43,75 @@ class _MyHomePageState extends State<MyHomePage> {
         foregroundColor: Colors.white,
         title: Text(widget.title),
 
-        actions: [
-          Icon(Icons.local_fire_department_outlined),
-          SizedBox(width: 4),
-          Text(_streakDisplay, style: TextStyle(fontSize: 20)),
-          SizedBox(width: 16),
-        ],
-
         elevation: 10.0,
         shadowColor: Colors.black.withAlpha(255),
       ),
 
-      drawer: const MenuDrawer(),
+      body: SafeArea(
 
+        child: Padding(
 
-    );
-  }
+          padding: const EdgeInsets.all(16),
 
-}
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
 
-class MenuDrawer extends StatelessWidget {
-  const MenuDrawer({super.key});
+            children: [
+              Text(
+                  'Welcome! Please select who you are',
 
-  @override
-  Widget build(BuildContext context) {
-    return Drawer(
-      child: SafeArea(
-
-        child: Column(
-
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: CircleAvatar(
-                radius: 40,
-                child: Icon(Icons.person_outline, size: 48),
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.black87,)
               ),
-            ),
-            ListTile(title: const Text('Account'), onTap: () {}),
-            ListTile(title: const Text('Settings'), onTap: () {}),
-            ListTile(title: const Text('Help'), onTap: () {}),
-          ],
+
+              const SizedBox(height: 20),
+
+              SizedBox(
+                height: 100,
+                child: SelectionButton(
+                  label: 'I am a patient',
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => const PatientHomePage()),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              SizedBox(
+                height: 100,
+                child: SelectionButton(
+                  label: 'I am a CCCARE Physician',
+                  onPressed: () {},
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+
+
+          ),
 
         ),
 
       ),
 
-    );
 
+    );
   }
 }
 
-
-class HomePageButton extends StatelessWidget {
-  const HomePageButton({
+class SelectionButton extends StatelessWidget {
+  const SelectionButton({
     super.key,
-    this.icon,
     this.label,
-    this.iconSize = 36,
-    this.fontSize = 16,
+    this.iconSize = 0,
+    this.fontSize = 25,
     required this.onPressed,
   });
 
-  final IconData? icon;
   final String? label;
   final double iconSize;
   final double fontSize;
@@ -125,6 +122,9 @@ class HomePageButton extends StatelessWidget {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
+
         elevation: 4,
         padding: const EdgeInsets.all(8),
         shape: RoundedRectangleBorder(
@@ -134,13 +134,12 @@ class HomePageButton extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: iconSize),
-          const SizedBox(height: 8),
-          Text(
-            label!,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: fontSize),
-          ),
+          if (label != null)
+            Text(
+              label!,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: fontSize),
+            ),
         ],
       ),
     );
