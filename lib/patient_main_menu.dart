@@ -29,7 +29,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int dailyStreak = 0;
   int _dailyStreak = 0;
   String _streakDisplay = "";
 
@@ -169,8 +168,7 @@ class MenuDrawer extends StatelessWidget {
               ),
             ),
             ListTile(title: const Text('Account'), onTap: () {}),
-            ListTile(title: const Text('Settings'), onTap: () {}),
-            ListTile(title: const Text('Help'), onTap: () {}),
+            ListTile(title: const Text('Settings'), onTap: () {})
           ],
 
         ),
