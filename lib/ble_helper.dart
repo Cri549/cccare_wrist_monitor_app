@@ -83,21 +83,21 @@ class ExerciseBle {
       {Duration timeout = const Duration(seconds: 10)}) async {
     final completer = Completer<BluetoothDevice>();
 
-    // final sub = FlutterBluePlus.onScanResults.listen((results) {
-    //   if (results.isNotEmpty && !completer.isCompleted) {
-    //     completer.complete(results.last.device);
-    //   }
-    // });
-
     final sub = FlutterBluePlus.onScanResults.listen((results) {
-      for (final r in results) {
-        debugPrint('scan: "${r.advertisementData.advName}" '
-            '${r.device.remoteId} svcs=${r.advertisementData.serviceUuids}');
-        final match = r.advertisementData.serviceUuids.contains(SensorUuids.service) ||
-            r.advertisementData.advName == 'ECE190ExerciseSensor';
-        if (match && !completer.isCompleted) completer.complete(r.device);
+      if (results.isNotEmpty && !completer.isCompleted) {
+        completer.complete(results.last.device);
       }
     });
+
+    // final sub = FlutterBluePlus.onScanResults.listen((results) {
+    //   for (final r in results) {
+    //     debugPrint('scan: "${r.advertisementData.advName}" '
+    //         '${r.device.remoteId} svcs=${r.advertisementData.serviceUuids}');
+    //     final match = r.advertisementData.serviceUuids.contains(SensorUuids.service) ||
+    //         r.advertisementData.advName == 'ECE190ExerciseSensor';
+    //     if (match && !completer.isCompleted) completer.complete(r.device);
+    //   }
+    // });
 
     await FlutterBluePlus.startScan(
       withServices: [SensorUuids.service],
