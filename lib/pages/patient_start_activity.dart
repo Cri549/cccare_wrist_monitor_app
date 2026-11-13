@@ -28,7 +28,69 @@ class _PatientStartActivity extends State<PatientStartActivity> {
         shadowColor: Colors.black.withAlpha(255),
       ),
 
+      body: SafeArea(
+          child: Padding(
 
+            padding: const EdgeInsets.all(16),
+
+
+
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+
+              children: [
+
+                Expanded(
+
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Today\'s Routine',
+                          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                        ),
+
+                        const SizedBox(height: 12),
+                        const Text('- Rows'),
+                        const Text('- Placeholder'),
+                        const Text('- Placeholder'),
+                        const Text('- Placeholder'),
+                        const Text('- Placeholder'),
+                        const Text('- Placeholder'),
+                        const Text('- Placeholder'),
+                        const Text('- Placeholder'),
+                        const Text('- Placeholder'),
+                        const Text('- Placeholder'),
+                        const Text('- Hello!'),
+
+
+                      ],
+                    ),
+                  ),
+
+                ),
+
+                const SizedBox(height: 12),
+
+                // Static part: always at the bottom
+                SizedBox(
+                  height: 60,
+
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // start the activity
+                    },
+                    child: const Text('Start Activity', style: TextStyle(fontSize: 20)),
+                  ),
+                ),
+              ]
+
+            )
+
+          )
+
+      )
 
 
     );

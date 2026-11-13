@@ -66,6 +66,7 @@ class _PatientHomePage extends State<PatientHomePage> {
                   iconSize: 64,
                   fontSize: 24,
                   onPressed: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const PatientStartActivity()));
                     _incrementStreak();
                   },
                 ),
