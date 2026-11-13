@@ -1,32 +1,44 @@
-// example_usage.dart
+// session_usage.dart
 // Shows how the BLE helper and logger fit together. Not a full UI.
 
 import 'ble_helper.dart';
 import 'session_logger.dart';
 
 class SessionController {
+  bool _listening = false;
   final ble = ExerciseBle();
   final logger = SessionLogger();
+
+  LiveHSample hSample = LiveHSample(0, 0, 0);
+  LiveRSample rSample = LiveRSample(0, 0);
 
   DateTime? _startedAt;
 
   Future<void> init() async {
-    // Every time the ESP32 reports a finished session, log it.
-    ble.summaryStream.listen((s) async {
-      await logger.add(SessionRecord(
-        startedAt: _startedAt ?? DateTime.now(),
-        durationMs: s.durationMs,
-        sampleCount: s.sampleCount,
-        avg: s.avg,
-        min: s.min,
-        max: s.max,
-        extra: {'exercise': 'knee extension'}, // customize
-      ));
-    });
+    if(!_listening){
+      _listening = true;
+      // Every time the ESP32 reports a finished session, log it.
+      ble.summaryStream.listen((s) async {
+        await logger.add(SessionRecord(
+          startedAt: _startedAt ?? DateTime.now(),
+          durationMs: s.durationMs,
+          heartCount: s.heartCount,
+          havg: s.havg,
+          hmin: s.hmin,
+          hmax: s.hmax,
+          spCount: s.spCount,
+          spavg: s.spavg,
+          spmin: s.spmin,
+          spmax: s.spmax,
+          repCount: s.repCount,
+          extra: {'exercise': 'knee extension'}, // customize
+        ));
+      });
 
-    // Optional: live values for a chart.
-    ble.liveStream.listen((p) => print('${p.msSinceStart} ms -> ${p.value}'));
-
+      // Optional: live values for a chart.
+      ble.liveRStream.listen((p) => rSample = p);
+      ble.liveHStream.listen((p) => hSample = p);
+    }
     await ble.scanAndConnect();
   }
 

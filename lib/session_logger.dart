@@ -16,22 +16,32 @@ class SessionRecord {
   final String id; // unique id (timestamp-based by default)
   final DateTime startedAt;
   final int durationMs;
-  final int sampleCount;
-  final double avg;
-  final double min;
-  final double max;
+  final int heartCount;
+  final double havg;
+  final double hmin;
+  final double hmax;
+  final int spCount;
+  final double spavg;
+  final double spmin;
+  final double spmax;
+  final int repCount;
 
-  /// Free-form extras: exercise name, patient notes, pain score, reps, etc.
+  // Free-form extras: exercise name, patient notes, pain score, reps, etc.
   final Map<String, dynamic> extra;
 
   SessionRecord({
     String? id,
     required this.startedAt,
     required this.durationMs,
-    required this.sampleCount,
-    required this.avg,
-    required this.min,
-    required this.max,
+    required this.heartCount,
+    required this.havg,
+    required this.hmin,
+    required this.hmax,
+    required this.spCount,
+    required this.spavg,
+    required this.spmin,
+    required this.spmax,
+    required this.repCount,
     this.extra = const {},
   }) : id = id ?? startedAt.microsecondsSinceEpoch.toString();
 
@@ -39,10 +49,15 @@ class SessionRecord {
         'id': id,
         'startedAt': startedAt.toIso8601String(),
         'durationMs': durationMs,
-        'sampleCount': sampleCount,
-        'avg': avg,
-        'min': min,
-        'max': max,
+        'heartCount': heartCount,
+        'havg': havg,
+        'hmin': hmin,
+        'hmax': hmax,
+        'spCount': spCount,
+        'spavg': spavg,
+        'spmin': spmin,
+        'spmax': spmax,
+        'repCount': repCount,
         'extra': extra,
       };
 
@@ -50,10 +65,15 @@ class SessionRecord {
         id: j['id'] as String,
         startedAt: DateTime.parse(j['startedAt'] as String),
         durationMs: j['durationMs'] as int,
-        sampleCount: j['sampleCount'] as int,
-        avg: (j['avg'] as num).toDouble(),
-        min: (j['min'] as num).toDouble(),
-        max: (j['max'] as num).toDouble(),
+        heartCount: j['heartCount'] as int,
+        havg: (j['havg'] as num).toDouble(),
+        hmin: (j['hmin'] as num).toDouble(),
+        hmax: (j['hmax'] as num).toDouble(),
+        spCount: j['spCount'] as int,
+        spavg: (j['spavg'] as num).toDouble(),
+        spmin: (j['spmin'] as num).toDouble(),
+        spmax: (j['spmax'] as num).toDouble(),
+        repCount: j['repCount'] as int,
         extra: Map<String, dynamic>.from(j['extra'] ?? {}),
       );
 }
@@ -72,14 +92,14 @@ class SessionLogger {
     return _file = f;
   }
 
-  /// Append one session (cheap; doesn't rewrite the file).
+  // Append one session (cheap; doesn't rewrite the file).
   Future<void> add(SessionRecord record) async {
     final f = await _getFile();
     await f.writeAsString('${jsonEncode(record.toJson())}\n',
         mode: FileMode.append, flush: true);
   }
 
-  /// Read every session, oldest first. Corrupt lines are skipped.
+  // Read every session, oldest first. Corrupt lines are skipped.
   Future<List<SessionRecord>> readAll() async {
     final f = await _getFile();
     final records = <SessionRecord>[];
@@ -94,7 +114,7 @@ class SessionLogger {
     return records;
   }
 
-  /// Sessions between [from] and [to] (inclusive), handy for weekly reports.
+  // Sessions between [from] and [to] (inclusive), handy for weekly reports.
   Future<List<SessionRecord>> readRange(DateTime from, DateTime to) async {
     final all = await readAll();
     return all
@@ -113,20 +133,20 @@ class SessionLogger {
 
   Future<void> clear() async => (await _getFile()).writeAsString('');
 
-  /// CSV string (extras are JSON-encoded into one column).
+  // CSV string (extras are JSON-encoded into one column).
   Future<String> toCsv() async {
     final rows = await readAll();
     final sb = StringBuffer(
-        'id,startedAt,durationMs,sampleCount,avg,min,max,extra\n');
+        'id,startedAt,durationMs,heartCount,havg,hmin,hmax,spCount,spavg,spmin,spmax,repCount,extra\n');
     for (final r in rows) {
       final extra = jsonEncode(r.extra).replaceAll('"', '""');
       sb.writeln('${r.id},${r.startedAt.toIso8601String()},${r.durationMs},'
-          '${r.sampleCount},${r.avg},${r.min},${r.max},"$extra"');
+          '${r.heartCount},${r.havg},${r.hmin},${r.hmax},${r.spCount},${r.spavg},${r.spmin},${r.spmax},${r.repCount},"$extra"');
     }
     return sb.toString();
   }
 
-  /// Write the CSV to a temp file you can hand to share_plus / email.
+  // Write the CSV to a temp file you can hand to share_plus / email.
   Future<File> exportCsvFile() async {
     final dir = await getTemporaryDirectory();
     final out = File('${dir.path}/sessions_export.csv');

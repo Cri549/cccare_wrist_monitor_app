@@ -7,36 +7,56 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 // UUIDs must match the firmware.
 class SensorUuids {
   static final service = Guid('4fafc201-1fb5-459e-8fcc-c5c9c331914b');
-  static final live = Guid('beb5483e-36e1-4688-b7f5-ea07361b26a8');
-  static final control = Guid('beb5483e-36e1-4688-b7f5-ea07361b26a9');
-  static final summary = Guid('beb5483e-36e1-4688-b7f5-ea07361b26aa');
+  static final liveR = Guid('beb5483e-36e1-4688-b7f5-ea07361b26a8');
+  static final liveH = Guid('beb5483e-36e1-4688-b7f5-ea07361b26a9');
+  static final control = Guid('beb5483e-36e1-4688-b7f5-ea07361b26aa');
+  static final summary = Guid('beb5483e-36e1-4688-b7f5-ea07361b26ab');
 }
 
 // One live reading (10 Hz by default).
-class LiveSample {
+class LiveRSample {
   final int msSinceStart;
-  final double value;
-  LiveSample(this.msSinceStart, this.value);
+  final int value;
+  LiveRSample(this.msSinceStart, this.value);
+}
+
+class LiveHSample {
+  final int msSinceStart;
+  final double hValue, spValue;
+  LiveHSample(this.msSinceStart, this.hValue, this.spValue);
 }
 
 // Stats the ESP32 sends once when a session stops.
 class SessionSummary {
-  final int sampleCount;
   final int durationMs;
-  final double avg;
-  final double min;
-  final double max;
+  final int heartCount;
+  final double havg;
+  final double hmin;
+  final double hmax;
+  final int spCount;
+  final double spavg;
+  final double spmin;
+  final double spmax;
+  final int repCount;
+
+
   SessionSummary({
-    required this.sampleCount,
     required this.durationMs,
-    required this.avg,
-    required this.min,
-    required this.max,
+    required this.heartCount,
+    required this.havg,
+    required this.hmin,
+    required this.hmax, 
+    required this.spCount, 
+    required this.spavg, 
+    required this.spmin, 
+    required this.spmax, 
+    required this.repCount,
   });
 }
 
@@ -45,12 +65,14 @@ class ExerciseBle {
   BluetoothCharacteristic? _control;
   final List<StreamSubscription> _subs = [];
 
-  final _liveCtrl = StreamController<LiveSample>.broadcast();
+  final _liveHCtrl = StreamController<LiveHSample>.broadcast();
+  final _liveRCtrl = StreamController<LiveRSample>.broadcast();
   final _summaryCtrl = StreamController<SessionSummary>.broadcast();
   final _connCtrl =
       StreamController<BluetoothConnectionState>.broadcast();
 
-  Stream<LiveSample> get liveStream => _liveCtrl.stream;
+  Stream<LiveHSample> get liveHStream => _liveHCtrl.stream;
+  Stream<LiveRSample> get liveRStream => _liveRCtrl.stream;
   Stream<SessionSummary> get summaryStream => _summaryCtrl.stream;
   Stream<BluetoothConnectionState> get connectionStream => _connCtrl.stream;
 
@@ -61,9 +83,19 @@ class ExerciseBle {
       {Duration timeout = const Duration(seconds: 10)}) async {
     final completer = Completer<BluetoothDevice>();
 
+    // final sub = FlutterBluePlus.onScanResults.listen((results) {
+    //   if (results.isNotEmpty && !completer.isCompleted) {
+    //     completer.complete(results.last.device);
+    //   }
+    // });
+
     final sub = FlutterBluePlus.onScanResults.listen((results) {
-      if (results.isNotEmpty && !completer.isCompleted) {
-        completer.complete(results.last.device);
+      for (final r in results) {
+        debugPrint('scan: "${r.advertisementData.advName}" '
+            '${r.device.remoteId} svcs=${r.advertisementData.serviceUuids}');
+        final match = r.advertisementData.serviceUuids.contains(SensorUuids.service) ||
+            r.advertisementData.advName == 'ECE190ExerciseSensor';
+        if (match && !completer.isCompleted) completer.complete(r.device);
       }
     });
 
@@ -98,9 +130,12 @@ class ExerciseBle {
     for (final c in service.characteristics) {
       if (c.uuid == SensorUuids.control) {
         _control = c;
-      } else if (c.uuid == SensorUuids.live) {
+      } else if (c.uuid == SensorUuids.liveR) {
         await c.setNotifyValue(true);
-        _subs.add(c.onValueReceived.listen(_onLive));
+        _subs.add(c.onValueReceived.listen(_onRLive));
+      } else if (c.uuid == SensorUuids.liveH) {
+        await c.setNotifyValue(true);
+        _subs.add(c.onValueReceived.listen(_onHLive));
       } else if (c.uuid == SensorUuids.summary) {
         await c.setNotifyValue(true);
         _subs.add(c.onValueReceived.listen(_onSummary));
@@ -138,19 +173,31 @@ class ExerciseBle {
 
   Future<void> dispose() async {
     await disconnect();
-    await _liveCtrl.close();
+    await _liveHCtrl.close();
+    await _liveRCtrl.close();
     await _summaryCtrl.close();
     await _connCtrl.close();
   }
 
   // ---- Packet parsing (little-endian) ----
+  // TODO: Update to add other sensor values
 
-  void _onLive(List<int> data) {
+  void _onHLive(List<int> data) {
     if (data.length < 8) return;
     final b = ByteData.sublistView(Uint8List.fromList(data));
-    _liveCtrl.add(LiveSample(
+    _liveHCtrl.add(LiveHSample(
       b.getUint32(0, Endian.little),
       b.getFloat32(4, Endian.little),
+      b.getFloat32(8, Endian.little),
+    ));
+  }
+
+  void _onRLive(List<int> data) {
+    if (data.length < 8) return;
+    final b = ByteData.sublistView(Uint8List.fromList(data));
+    _liveRCtrl.add(LiveRSample(
+      b.getUint32(0, Endian.little),
+      b.getUint32(4, Endian.little),
     ));
   }
 
@@ -158,11 +205,16 @@ class ExerciseBle {
     if (data.length < 20) return;
     final b = ByteData.sublistView(Uint8List.fromList(data));
     _summaryCtrl.add(SessionSummary(
-      sampleCount: b.getUint32(0, Endian.little),
-      durationMs: b.getUint32(4, Endian.little),
-      avg: b.getFloat32(8, Endian.little),
-      min: b.getFloat32(12, Endian.little),
-      max: b.getFloat32(16, Endian.little),
+      durationMs: b.getUint32(0, Endian.little),
+      heartCount: b.getUint32(4, Endian.little),
+      havg: b.getFloat32(8, Endian.little),
+      hmin: b.getFloat32(12, Endian.little),
+      hmax: b.getFloat32(16, Endian.little),
+      spCount: b.getUint32(20, Endian.little),
+      spavg: b.getFloat32(24, Endian.little),
+      spmin: b.getFloat32(28, Endian.little),
+      spmax: b.getFloat32(32, Endian.little),
+      repCount: b.getUint32(36, Endian.little),
     ));
   }
 }
