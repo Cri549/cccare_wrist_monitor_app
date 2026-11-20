@@ -1,55 +1,90 @@
 // session_usage.dart
-// Shows how the BLE helper and logger fit together. Not a full UI.
+// Glue between the BLE helper and the logger. Not a full UI.
+
+import 'package:flutter/foundation.dart';
 
 import 'ble_helper.dart';
 import 'session_logger.dart';
 
 class SessionController {
-  bool _listening = false;
   final ble = ExerciseBle();
   final logger = SessionLogger();
+
+  // The UI listens to this. It is kept in sync with the ESP32 even across
+  // reconnects (the ESP32 keeps a session running for a while if the app drops).
+  final sessionRunning = ValueNotifier<bool>(false);
 
   LiveHSample hSample = LiveHSample(0, 0, 0);
   LiveRSample rSample = LiveRSample(0, 0);
 
   DateTime? _startedAt;
+  bool _listening = false;
 
+  // Set up listeners once, no matter how many times the user taps Connect.
+  void _listen() {
+    if (_listening) return;
+    _listening = true;
+
+    // Every time the ESP32 reports a finished session, log it.
+    ble.summaryStream.listen((s) async {
+      await logger.add(SessionRecord(
+        startedAt: _startedAt ?? DateTime.now(),
+        durationMs: s.durationMs,
+        heartCount: s.heartCount,
+        havg: s.havg,
+        hmin: s.hmin,
+        hmax: s.hmax,
+        spCount: s.spCount,
+        spavg: s.spavg,
+        spmin: s.spmin,
+        spmax: s.spmax,
+        repCount: s.repCount,
+        extra: {'exercise': 'knee extension'}, // customize
+      ));
+      _startedAt = null;
+      sessionRunning.value = false;
+    });
+
+    // Live values for the UI.
+    ble.liveRStream.listen((p) => rSample = p);
+    ble.liveHStream.listen((p) => hSample = p);
+
+    // After every (re)connect the ESP32 tells us whether a session is running.
+    ble.deviceSessionStream.listen((active) {
+      sessionRunning.value = active;
+      if (active) _startedAt ??= DateTime.now();
+    });
+
+    // If we give up on reconnecting (or the user disconnects), nothing is running
+    // from the app's point of view. The ESP32 drops its own session after its grace period.
+    ble.statusStream.listen((s) {
+      if (s == BleStatus.disconnected) sessionRunning.value = false;
+    });
+  }
+
+  // Scan and connect. Safe to call again after a failure or a disconnect.
   Future<void> init() async {
-    if(!_listening){
-      _listening = true;
-      // Every time the ESP32 reports a finished session, log it.
-      ble.summaryStream.listen((s) async {
-        await logger.add(SessionRecord(
-          startedAt: _startedAt ?? DateTime.now(),
-          durationMs: s.durationMs,
-          heartCount: s.heartCount,
-          havg: s.havg,
-          hmin: s.hmin,
-          hmax: s.hmax,
-          spCount: s.spCount,
-          spavg: s.spavg,
-          spmin: s.spmin,
-          spmax: s.spmax,
-          repCount: s.repCount,
-          extra: {'exercise': 'knee extension'}, // customize
-        ));
-      });
-
-      // Optional: live values for a chart.
-      ble.liveRStream.listen((p) => rSample = p);
-      ble.liveHStream.listen((p) => hSample = p);
-    }
+    _listen();
     await ble.scanAndConnect();
   }
 
   Future<void> start() async {
     _startedAt = DateTime.now();
     await ble.startSession();
+    sessionRunning.value = true;
   }
 
-  Future<void> stop() => ble.stopSession(); // summary arrives on summaryStream
+  // The summary arrives on summaryStream and is logged there.
+  Future<void> stop() => ble.stopSession();
+
+  Future<void> disconnect() => ble.disconnect();
 
   Future<String> reportForPhysio() => logger.toCsv();
+
+  Future<void> dispose() async {
+    await ble.dispose();
+    sessionRunning.dispose();
+  }
 }
 
 /*

@@ -1,53 +1,41 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart'
-    show BluetoothConnectionState;
 
 import 'package:cccare_wrist_monitor_app/ble_helper.dart';
 import 'package:cccare_wrist_monitor_app/session_usage.dart'; // contains SessionController
+
 
 class PatientStartActivity extends StatefulWidget {
   const PatientStartActivity({super.key});
 
   @override
-  State<PatientStartActivity> createState() => _PatientActivityLog();
+  State<PatientStartActivity> createState() => _PatientStartActivity();
 }
 
-class _PatientActivityLog extends State<PatientStartActivity> {
+class _PatientStartActivity extends State<PatientStartActivity> {
   // One controller for the lifetime of this screen.
   final controller = SessionController();
 
-  String status = 'Not connected';
-  bool busy = false;
-  bool sessionRunning = false;
+  String? lastError;
 
   Future<void> _connect() async {
-    setState(() {
-      busy = true;
-      status = 'Scanning...';
-    });
+    setState(() => lastError = null);
     try {
-      await controller.init(); // sets up listeners + scanAndConnect()
-      if (!mounted) return;
-      setState(() => status = 'Connected');
+      await controller.init(); // listeners are set up once; safe to repeat
     } catch (e, st) {
       debugPrint('CONNECT FAILED: $e\n$st');
       if (!mounted) return;
-      setState(() => status = 'Connect failed: $e');
-    } finally {
-      if (mounted) setState(() => busy = false);
+      setState(() => lastError = 'Connect failed: $e');
     }
   }
 
   Future<void> _toggleSession() async {
     try {
-      if (sessionRunning) {
+      if (controller.sessionRunning.value) {
         await controller.stop(); // summary is logged automatically
       } else {
         await controller.start();
       }
-      if (!mounted) return;
-      setState(() => sessionRunning = !sessionRunning);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
@@ -55,9 +43,22 @@ class _PatientActivityLog extends State<PatientStartActivity> {
     }
   }
 
+  String _statusText(BleStatus s){
+    switch(s){
+      case BleStatus.connected:
+        return 'Sensor connected';
+      case BleStatus.connecting:
+        return "Connecting...";
+      case BleStatus.reconnecting:
+        return "Connection lost - reconnecting...";
+      case BleStatus.disconnected:
+        return "Not connected";
+    }
+  }
+
   @override
   void dispose() {
-    controller.ble.dispose();
+    controller.dispose();
     super.dispose();
   }
 
@@ -77,26 +78,41 @@ class _PatientActivityLog extends State<PatientStartActivity> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            StreamBuilder<BluetoothConnectionState>(
-              stream: controller.ble.connectionStream,
-              initialData: BluetoothConnectionState.disconnected,
+            StreamBuilder<BleStatus>(
+              stream: controller.ble.statusStream,
+              initialData: controller.ble.status,
               builder: (context, snap) {
-                final connected =
-                    snap.data == BluetoothConnectionState.connected;
+                final status = snap.data ?? BleStatus.disconnected;
+                final connected = status == BleStatus.connected;
+                final canConnect = status == BleStatus.disconnected;
+                final canDisconnect = connected || status == BleStatus.reconnecting;
+
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(connected ? 'Sensor connected' : status),
+                    Text(_statusText(status)),
+                    if (lastError != null && canConnect)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(lastError!,
+                            style: const TextStyle(color: Colors.red)),
+                      ),
                     const SizedBox(height: 12),
-                    Row(children: [
+                    Wrap(spacing: 12, children: [
                       ElevatedButton(
-                        onPressed: (busy || connected) ? null : _connect,
+                        onPressed: canConnect ? _connect : null,
                         child: const Text('Connect'),
                       ),
-                      const SizedBox(width: 12),
                       ElevatedButton(
-                        onPressed: connected ? _toggleSession : null,
-                        child: Text(sessionRunning ? 'Stop' : 'Start'),
+                        onPressed: canDisconnect ? controller.disconnect : null,
+                        child: const Text('Disconnect'),
+                      ),
+                      ValueListenableBuilder<bool>(
+                        valueListenable: controller.sessionRunning,
+                        builder: (context, running, _) => ElevatedButton(
+                          onPressed: connected ? _toggleSession : null,
+                          child: Text(running ? 'Stop' : 'Start'),
+                        ),
                       ),
                     ]),
                   ],
