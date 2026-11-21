@@ -4,13 +4,15 @@
 // automatic reconnection after an unexpected disconnect.
 //
 // pubspec.yaml:
-//   flutter_blue_plus: ^2.x   (License.nonprofit)
+//   flutter_blue_plus: ^2.x   (License.nonprofit below is your license choice)
 
 import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
-// UUIDs must match the firmware (don't change them unless changed in firmware)
+// UUIDs must match the firmware.
 class SensorUuids {
   static const deviceName = 'ECE190ExerciseSensor';
   static final service = Guid('4fafc201-1fb5-459e-8fcc-c5c9c331914b');
@@ -119,16 +121,24 @@ class ExerciseBle {
   // ------------------------------------------------------------------
 
   // Scan for the sensor and return the first match.
-  Future<BluetoothDevice> scanForSensor(
-      {Duration timeout = const Duration(seconds: 10)}) async {
+  //
+  // [useServiceFilter]: false scans for everything and matches by service UUID,
+  // name, or the remembered device's id. Reconnect scans use this because on
+  // Linux a UUID-filtered scan often fails to report a device BlueZ already knows.
+  Future<BluetoothDevice> scanForSensor({
+    Duration timeout = const Duration(seconds: 10),
+    bool useServiceFilter = true,
+  }) async {
     if (FlutterBluePlus.isScanningNow) await FlutterBluePlus.stopScan();
 
+    final lastId = _lastDevice?.remoteId;
     final completer = Completer<BluetoothDevice>();
     final sub = FlutterBluePlus.onScanResults.listen((results) {
       for (final r in results) {
         final adv = r.advertisementData;
         final match = adv.serviceUuids.contains(SensorUuids.service) ||
-            adv.advName == SensorUuids.deviceName;
+            adv.advName == SensorUuids.deviceName ||
+            (lastId != null && r.device.remoteId == lastId);
         debugPrint('scan: "${adv.advName}" ${r.device.remoteId} '
             'match=$match');
         if (match && !completer.isCompleted) completer.complete(r.device);
@@ -137,7 +147,7 @@ class ExerciseBle {
 
     try {
       await FlutterBluePlus.startScan(
-        withServices: [SensorUuids.service],
+        withServices: useServiceFilter ? [SensorUuids.service] : [],
         timeout: timeout,
       );
       return await completer.future.timeout(timeout);
@@ -145,7 +155,7 @@ class ExerciseBle {
       throw Exception('Sensor not found');
     } finally {
       await sub.cancel();
-      await FlutterBluePlus.stopScan();
+      if (FlutterBluePlus.isScanningNow) await FlutterBluePlus.stopScan();
     }
   }
 
@@ -170,13 +180,24 @@ class ExerciseBle {
     _loopToken++;
     _setStatus(BleStatus.connecting);
     try {
-      await _attempt(tryDirect: false);
+      // Once we've connected before, go straight to that device; scanning is
+      // unreliable for a device BlueZ already knows about.
+      await _attempt(tryDirect: _lastDevice != null);
     } catch (e) {
       await _teardownLink();
       _setStatus(BleStatus.disconnected);
       rethrow;
     }
   }
+
+  // The remote id of the last device we connected to. Save it (e.g. with
+  // shared_preferences) and pass it to [connectById] on the next app launch to
+  // skip scanning entirely.
+  String? get lastDeviceId => _lastDevice?.remoteId.str;
+
+  // Connect straight to a known device id, no scan needed.
+  Future<void> connectById(String remoteId) =>
+      connect(BluetoothDevice.fromId(remoteId));
 
   Future<void> startSession() => _sendCommand(0x01);
 
@@ -218,20 +239,26 @@ class ExerciseBle {
   // One full connection attempt: optionally try the last known device
   // directly, otherwise scan and connect.
   Future<void> _attempt({required bool tryDirect}) async {
+    final sw = Stopwatch()..start();
     await _teardownLink();
 
     final last = _lastDevice;
     if (tryDirect && last != null) {
       try {
-        await _connectAndSetup(last, timeout: const Duration(seconds: 8));
+        debugPrint('BLE: direct connect to ${last.remoteId}');
+        await _connectAndSetup(last, timeout: const Duration(seconds: 6));
+        debugPrint('BLE: direct connect succeeded in ${sw.elapsedMilliseconds} ms');
         return;
       } catch (e) {
-        debugPrint('Direct reconnect failed ($e), falling back to scan');
+        debugPrint('BLE: direct connect failed after '
+            '${sw.elapsedMilliseconds} ms ($e), falling back to scan');
         await _teardownLink();
       }
     }
 
-    final device = await scanForSensor();
+    // When reconnecting we know which device we want, so scan unfiltered.
+    final device = await scanForSensor(useServiceFilter: !tryDirect);
+    debugPrint('BLE: scan found device after ${sw.elapsedMilliseconds} ms');
     await _connectAndSetup(device, timeout: const Duration(seconds: 15));
   }
 
@@ -331,13 +358,13 @@ class ExerciseBle {
 
     try {
       for (var attempt = 1; attempt <= maxReconnectAttempts; attempt++) {
-        // Back off: 1 s, 2 s, 3 s, 4 s, then 5 s between attempts.
-        await Future.delayed(Duration(seconds: attempt < 5 ? attempt : 5));
+        // Back off: 1 s, 2 s, 3 s, then 3 s between attempts.
+        await Future.delayed(Duration(seconds: attempt < 3 ? attempt : 3));
         if (token != _loopToken || _userDisconnected) return;
 
         debugPrint('BLE: reconnect attempt $attempt/$maxReconnectAttempts');
         try {
-          await _attempt(tryDirect: attempt == 1);
+          await _attempt(tryDirect: true);
           if (token != _loopToken) {
             // The app took over (connect/disconnect) while we were working.
             await _teardownLink();

@@ -43,16 +43,16 @@ class _PatientStartActivity extends State<PatientStartActivity> {
     }
   }
 
-  String _statusText(BleStatus s){
-    switch(s){
+  String _statusText(BleStatus s) {
+    switch (s) {
       case BleStatus.connected:
         return 'Sensor connected';
       case BleStatus.connecting:
-        return "Connecting...";
+        return 'Connecting...';
       case BleStatus.reconnecting:
-        return "Connection lost - reconnecting...";
+        return 'Connection lost - reconnecting...';
       case BleStatus.disconnected:
-        return "Not connected";
+        return 'Not connected';
     }
   }
 
@@ -120,21 +120,22 @@ class _PatientStartActivity extends State<PatientStartActivity> {
               },
             ),
             const SizedBox(height: 24),
-            StreamBuilder<LiveHSample>(
-              stream: controller.ble.liveHStream,
-              builder: (context, snap) {
-                final s = snap.data;
-                return Text(s == null
-                    ? 'Heart rate / SpO2: --'
-                    : 'Heart rate: ${s.hValue.toStringAsFixed(0)} bpm   '
-                    'SpO2: ${s.spValue.toStringAsFixed(0)} %');
+            ListenableBuilder(
+              listenable:
+              Listenable.merge([controller.heartRate, controller.spo2]),
+              builder: (context, _) {
+                final hr = controller.heartRate.value;
+                final sp = controller.spo2.value;
+                return Text(
+                  'Heart rate: ${hr == null ? '--' : '${hr.toStringAsFixed(0)} bpm'}   '
+                      'SpO2: ${sp == null ? '--' : '${sp.toStringAsFixed(0)} %'}',
+                );
               },
             ),
             const SizedBox(height: 8),
-            StreamBuilder<LiveRSample>(
-              stream: controller.ble.liveRStream,
-              builder: (context, snap) =>
-                  Text('Reps: ${snap.data?.value ?? 0}'),
+            ValueListenableBuilder<int>(
+              valueListenable: controller.reps,
+              builder: (context, reps, _) => Text('Reps: $reps'),
             ),
           ],
         ),

@@ -14,6 +14,11 @@ class SessionController {
   // reconnects (the ESP32 keeps a session running for a while if the app drops).
   final sessionRunning = ValueNotifier<bool>(false);
 
+  // Live values shown in the UI. They are cleared whenever a new session starts.
+  final reps = ValueNotifier<int>(0);
+  final heartRate = ValueNotifier<double?>(null); // null = no reading yet
+  final spo2 = ValueNotifier<double?>(null);
+
   LiveHSample hSample = LiveHSample(0, 0, 0);
   LiveRSample rSample = LiveRSample(0, 0);
 
@@ -46,8 +51,15 @@ class SessionController {
     });
 
     // Live values for the UI.
-    ble.liveRStream.listen((p) => rSample = p);
-    ble.liveHStream.listen((p) => hSample = p);
+    ble.liveRStream.listen((p) {
+      rSample = p;
+      reps.value = p.value;
+    });
+    ble.liveHStream.listen((p) {
+      hSample = p;
+      heartRate.value = p.hValue;
+      spo2.value = p.spValue;
+    });
 
     // After every (re)connect the ESP32 tells us whether a session is running.
     ble.deviceSessionStream.listen((active) {
@@ -68,7 +80,17 @@ class SessionController {
     await ble.scanAndConnect();
   }
 
+  // Clear everything the UI shows from the previous session.
+  void _resetLive() {
+    hSample = LiveHSample(0, 0, 0);
+    rSample = LiveRSample(0, 0);
+    reps.value = 0;
+    heartRate.value = null;
+    spo2.value = null;
+  }
+
   Future<void> start() async {
+    _resetLive();
     _startedAt = DateTime.now();
     await ble.startSession();
     sessionRunning.value = true;
@@ -84,6 +106,9 @@ class SessionController {
   Future<void> dispose() async {
     await ble.dispose();
     sessionRunning.dispose();
+    reps.dispose();
+    heartRate.dispose();
+    spo2.dispose();
   }
 }
 
