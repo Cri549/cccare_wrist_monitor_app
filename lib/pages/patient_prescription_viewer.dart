@@ -9,6 +9,15 @@ class PatientPresriptionViewer extends StatefulWidget {
 
 class _PatientPresriptionViewer extends State<PatientPresriptionViewer> {
 
+  final List<String> items = [
+    'Hamstring Stretch',
+    'Calf Stretch',
+    'Cat-Cow Stretch',
+    'Upper-trap Stretch',
+    '10 Pushups',
+    '20 Stepups',
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -28,6 +37,37 @@ class _PatientPresriptionViewer extends State<PatientPresriptionViewer> {
         shadowColor: Colors.black.withAlpha(255),
       ),
 
+
+
+      body: SafeArea(
+
+        child: Padding(
+
+          padding: const EdgeInsets.all(16),
+
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+
+            children: [
+
+              Text(
+                  'For Today: '
+                  , style: TextStyle(fontSize: 26, fontWeight:FontWeight.bold),
+              ),
+
+              for (final i in items)
+
+                Text('- $i', style: TextStyle(fontSize: 20)),
+
+
+            ],
+
+
+          ),
+
+        ),
+
+      ),
 
 
 

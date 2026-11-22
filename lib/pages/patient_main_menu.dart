@@ -5,7 +5,7 @@ import 'patient_activity_log.dart';
 import 'patient_prescription_viewer.dart';
 import 'patient_settings.dart';
 import 'patient_start_activity.dart';
-import 'patient_messaging.dart';
+import 'patient_leaderboards.dart';
 import 'patient_reminders.dart';
 
 class PatientHomePage extends StatefulWidget {
@@ -146,16 +146,16 @@ class _PatientHomePage extends State<PatientHomePage> {
                     ),
                     const SizedBox(width: 16),
 
-                    //Contact CCCARE Button
+                    //Leaderboard Button
                     Expanded(
                       child: HomePageButton(
                         icon: Icons.person_outline,
-                        label: 'Contact CCCARE',
+                        label: 'Leaderboard',
                         onPressed: () {
 
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const PatientMessaging()),
+                            MaterialPageRoute(builder: (context) => const Leaderboard()),
                           );
 
                         },

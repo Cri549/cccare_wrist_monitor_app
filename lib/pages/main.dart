@@ -113,16 +113,7 @@ class _UserChoicePageState extends State<UserChoicePage> {
                   },
                 ),
               ),
-              const SizedBox(height: 8),
 
-              SizedBox(
-                height: 100,
-                child: SelectionButton(
-                  label: 'I am a CCCARE Physician',
-                  onPressed: () {},
-                ),
-              ),
-              const SizedBox(height: 8),
             ],
 
 
