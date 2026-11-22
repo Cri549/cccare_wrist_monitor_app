@@ -1,5 +1,6 @@
-            import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'patient_main_menu.dart';
+import '../tools/text_size_settings.dart';
 
 void main() {
   runApp(const CCCAREApp());
@@ -17,6 +18,39 @@ class CCCAREApp extends StatelessWidget {
 
         colorScheme: .fromSeed(seedColor: Colors.cyan),
       ),
+
+      builder: (context, child) {
+
+        return ValueListenableBuilder<double>(
+
+          valueListenable: TextSizeSettings.textScale,
+
+          builder: (context, scale, _) {
+            final systemScale = MediaQuery.textScalerOf(context).scale(1.0);
+            final combined = (systemScale * scale).clamp(
+
+              TextSizeSettings.minSize,
+              TextSizeSettings.maxSize,
+
+            );
+
+            return MediaQuery(
+
+              data: MediaQuery.of(context).copyWith(
+
+                textScaler: TextScaler.linear(combined),
+
+              ),
+              child: child!,
+
+            );
+
+          },
+
+        );
+
+      },
+
       home: const UserChoicePage(title: 'CCCARE Home'),
     );
   }
