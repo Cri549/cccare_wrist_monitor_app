@@ -3,10 +3,11 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart'; // pubspec.yaml: share_plus: ^11.0.0 (or newer)
+import 'package:share_plus/share_plus.dart';
 
 import 'package:cccare_wrist_monitor_app/ble_helper.dart';
-import 'package:cccare_wrist_monitor_app/session_usage.dart'; // contains SessionController
+import 'package:cccare_wrist_monitor_app/session_usage.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
 
 class PatientStartActivity extends StatefulWidget {
@@ -17,21 +18,21 @@ class PatientStartActivity extends StatefulWidget {
 }
 
 class _PatientStartActivity extends State<PatientStartActivity> {
-  // One controller for the lifetime of this screen.
   final controller = SessionController();
+  final FlutterTts tts = FlutterTts();
 
   String? lastError;
 
-  // True between the user pressing Stop and the session being logged.
   bool _stopRequested = false;
 
   @override
   void initState() {
     super.initState();
     controller.sessionRunning.addListener(_onRunningChanged);
+    tts.speak('Rows');
   }
 
-  // The controller sets sessionRunning to false only AFTER the summary has been
+// The controller sets sessionRunning to false only AFTER the summary has been
   // written to the log, so the CSV is guaranteed to include the new session.
   void _onRunningChanged() {
     if (controller.sessionRunning.value || !_stopRequested) return;
@@ -167,6 +168,7 @@ class _PatientStartActivity extends State<PatientStartActivity> {
   void dispose() {
     controller.sessionRunning.removeListener(_onRunningChanged);
     controller.dispose();
+    tts.stop();
     super.dispose();
   }
 

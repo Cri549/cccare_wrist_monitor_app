@@ -2,6 +2,8 @@
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
+
+
     <!-- Tell Google Play Store that your app uses Bluetooth LE
      Set android:required="true" if bluetooth is necessary -->
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
@@ -59,6 +61,9 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
         </intent>
     </queries>
 </manifest>
