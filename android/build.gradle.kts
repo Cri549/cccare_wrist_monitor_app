@@ -15,7 +15,7 @@ rootProject.layout.buildDirectory.value(newBuildDir)
 // but their dependencies need 34+. Force library plugins to compile against 36.
 subprojects {
     afterEvaluate {
-        extensions.findByType(com.android.build.gradle.LibraryExtension::class.java)?.compileSdk = 36
+        extensions.findByType(com.android.build.gradle.LibraryExtension::class.java)?.compileSdk = 37
     }
 }
 

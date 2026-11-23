@@ -198,6 +198,10 @@ class _PatientStartActivity extends State<PatientStartActivity> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Text(
+                      'Rows', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87,)
+                    ),
+
                     Text(_statusText(status)),
                     if (lastError != null && canConnect)
                       Padding(
